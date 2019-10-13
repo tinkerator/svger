@@ -27,6 +27,8 @@ type Tuple [2]float64
 type Svg struct {
 	Title        string  `xml:"title"`
 	Groups       []Group `xml:"g"`
+	Width 		 string  `xml:"width,attr"`
+	Height 		 string  `xml:"height,attr"`
 	ViewBox      string  `xml:"viewBox,attr"`
 	Elements     []DrawingInstructionParser
 	Name         string
@@ -41,7 +43,7 @@ type Svg struct {
 type Group struct {
 	ID              string
 	Stroke          string
-	StrokeWidth     int32
+	StrokeWidth     float64
 	Fill            string
 	FillRule        string
 	Elements        []DrawingInstructionParser
@@ -93,11 +95,11 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 		case "stroke":
 			g.Stroke = attr.Value
 		case "stroke-width":
-			intValue, err := strconv.ParseInt(attr.Value, 10, 32)
+			floatValue, err := strconv.ParseFloat(attr.Value, 64)
 			if err != nil {
 				return err
 			}
-			g.StrokeWidth = int32(intValue)
+			g.StrokeWidth = floatValue
 		case "fill":
 			g.Fill = attr.Value
 		case "fill-rule":
@@ -198,7 +200,12 @@ func (s *Svg) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
 		for _, attr := range start.Attr {
 			if attr.Name.Local == "viewBox" {
 				s.ViewBox = attr.Value
-				break
+			}
+			if attr.Name.Local == "width" {
+				s.Width = attr.Value
+			}
+			if attr.Name.Local == "height" {
+				s.Height = attr.Value
 			}
 		}
 
