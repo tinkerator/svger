@@ -48,7 +48,7 @@ func (s *Segment) addPoint(p [2]float64) {
 
 type pathDescriptionParser struct {
 	p              *Path
-	lex            gl.Lexer
+	lex            *gl.Lexer
 	x, y           float64
 	currentcommand int
 	tokbuf         [4]gl.Item
@@ -88,7 +88,7 @@ func (p *Path) Parse() chan Segment {
 	pdp.transform = mt.MultiplyTransforms(pdp.transform, pathTransform)
 	p.Segments = make(chan Segment)
 	l, _ := gl.Lex(fmt.Sprint(p.ID), p.D)
-	pdp.lex = *l
+	pdp.lex = l
 	go func() {
 		defer close(p.Segments)
 		for {
@@ -138,7 +138,7 @@ func (p *Path) ParseDrawingInstructions() (chan *DrawingInstruction, chan error)
 	p.errors = make(chan error, 100)
 	l, _ := gl.Lex(fmt.Sprint(p.ID), p.D)
 
-	pdp.lex = *l
+	pdp.lex = l
 	go func() {
 		defer close(p.instructions)
 		defer close(p.errors)
@@ -236,7 +236,7 @@ func (pdp *pathDescriptionParser) parseCommandDrawingInstructions(l *gl.Lexer, i
 func (pdp *pathDescriptionParser) parseMoveToAbsDI() error {
 	var tuples []Tuple
 
-	t, err := parseTuple(&pdp.lex)
+	t, err := parseTuple(pdp.lex)
 	if err != nil {
 		return fmt.Errorf("error parsing MoveToAbs. Expected tuple: %s", err)
 	}
@@ -253,7 +253,7 @@ func (pdp *pathDescriptionParser) parseMoveToAbsDI() error {
 
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing MoveToAbs\n%s", err)
 		}
@@ -277,7 +277,7 @@ func (pdp *pathDescriptionParser) parseMoveToAbsDI() error {
 func (pdp *pathDescriptionParser) parseMoveToAbs() error {
 	var tuples []Tuple
 
-	t, err := parseTuple(&pdp.lex)
+	t, err := parseTuple(pdp.lex)
 	if err != nil {
 		return fmt.Errorf("Error Passing MoveToAbs Expected Tuple\n%s", err)
 	}
@@ -296,7 +296,7 @@ func (pdp *pathDescriptionParser) parseMoveToAbs() error {
 
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing MoveToAbs\n%s", err)
 		}
@@ -338,7 +338,7 @@ func (pdp *pathDescriptionParser) parseLineToAbsDI() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing LineToAbs\n%s", err)
 		}
@@ -363,7 +363,7 @@ func (pdp *pathDescriptionParser) parseLineToAbs() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing LineToAbs\n%s", err)
 		}
@@ -388,7 +388,7 @@ func (pdp *pathDescriptionParser) parseLineToAbs() error {
 
 func (pdp *pathDescriptionParser) parseMoveToRelDI() error {
 	pdp.lex.ConsumeWhiteSpace()
-	t, err := parseTuple(&pdp.lex)
+	t, err := parseTuple(pdp.lex)
 	if err != nil {
 		return fmt.Errorf("Error Passing MoveToRel Expected First Tuple %s", err)
 	}
@@ -399,7 +399,7 @@ func (pdp *pathDescriptionParser) parseMoveToRelDI() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing MoveToRel\n%s", err)
 		}
@@ -422,7 +422,7 @@ func (pdp *pathDescriptionParser) parseMoveToRelDI() error {
 
 func (pdp *pathDescriptionParser) parseMoveToRel() error {
 	pdp.lex.ConsumeWhiteSpace()
-	t, err := parseTuple(&pdp.lex)
+	t, err := parseTuple(pdp.lex)
 	if err != nil {
 		return fmt.Errorf("Error Passing MoveToRel Expected First Tuple\n%s", err)
 	}
@@ -433,7 +433,7 @@ func (pdp *pathDescriptionParser) parseMoveToRel() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing MoveToRel\n%s", err)
 		}
@@ -498,7 +498,7 @@ func (pdp *pathDescriptionParser) parseLineToRelDI() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing LineToRel\n%s", err)
 		}
@@ -525,7 +525,7 @@ func (pdp *pathDescriptionParser) parseLineToRel() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing LineToRel\n%s", err)
 		}
@@ -685,7 +685,7 @@ func (pdp *pathDescriptionParser) parseCurveToRelDI() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing CurveToRel\n%s", err)
 		}
@@ -719,7 +719,7 @@ func (pdp *pathDescriptionParser) parseCurveToRel() error {
 	var tuples []Tuple
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error Passing CurveToRel\n%s", err)
 		}
@@ -777,7 +777,7 @@ func (pdp *pathDescriptionParser) parseCurveToAbsDI() error {
 
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error parsing CurveToRel\n%s", err)
 		}
@@ -816,7 +816,7 @@ func (pdp *pathDescriptionParser) parseCurveToAbs() error {
 
 	pdp.lex.ConsumeWhiteSpace()
 	for pdp.lex.PeekItem().Type == gl.ItemNumber {
-		t, err := parseTuple(&pdp.lex)
+		t, err := parseTuple(pdp.lex)
 		if err != nil {
 			return fmt.Errorf("Error parsing CurveToRel\n%s", err)
 		}
