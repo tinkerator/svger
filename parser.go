@@ -65,18 +65,20 @@ func parseTransform(tstring string) (mt.Transform, error) {
 			switch i.Value {
 			case "matrix":
 				return parseMatrix(lexer)
-				// case "scale":
-				// case "rotate":
 			case "translate":
 				return parseTranslate(lexer)
+			case "rotate":
+				return parseRotate(lexer)
+			case "scale":
+				return parseScale(lexer)
 			}
 		}
 	}
 }
 
 func parseMatrix(l *gl.Lexer) (mt.Transform, error) {
-	nums, err := parseParenNumList(l, 6)
-	if err != nil {
+	nums, err := parseParenNumList(l)
+	if err != nil || len(nums) != 6 {
 		return mt.Identity(),
 			fmt.Errorf("Error Parsing Transform Matrix: %v", err)
 	}
@@ -95,8 +97,8 @@ func parseMatrix(l *gl.Lexer) (mt.Transform, error) {
 }
 
 func parseTranslate(l *gl.Lexer) (mt.Transform, error) {
-	nums, err := parseParenNumList(l, 2)
-	if err != nil {
+	nums, err := parseParenNumList(l)
+	if err != nil || len(nums) != 2 {
 		return mt.Identity(), fmt.Errorf("Error Parsing Translate: %v", err)
 	}
 	tm := mt.Identity()
@@ -105,8 +107,37 @@ func parseTranslate(l *gl.Lexer) (mt.Transform, error) {
 	return tm, nil
 }
 
+func parseRotate(l *gl.Lexer) (mt.Transform, error) {
+	nums, err := parseParenNumList(l)
+	if err != nil || (len(nums) != 1 && len(nums) != 3) {
+		return mt.Identity(), fmt.Errorf("Error Parsing Rotate: %v", err)
+	}
+	a, px, py := nums[0], 0.0, 0.0
+	if len(nums) == 3 {
+		px, py = nums[1], nums[2]
+	}
+
+	tm := mt.Identity()
+	(&tm).RotatePoint(a, px, py)
+	return tm, nil
+}
+
+func parseScale(l *gl.Lexer) (mt.Transform, error) {
+	nums, err := parseParenNumList(l)
+	if err != nil || (len(nums) != 1 && len(nums) != 2) {
+		return mt.Identity(), fmt.Errorf("Error Parsing Scale: %v", err)
+	}
+	x, y := nums[0], nums[0]
+	if len(nums) == 2 {
+		y = nums[1]
+	}
+	tm := mt.Identity()
+	(&tm).Scale(x, y)
+	return tm, nil
+}
+
 // Parse a parenthesized list of ncount numbers.
-func parseParenNumList(l *gl.Lexer, ncount int) ([]float64, error) {
+func parseParenNumList(l *gl.Lexer) ([]float64, error) {
 	i := l.NextItem()
 	if i.Type != gl.ItemParan {
 		return nil, fmt.Errorf("Expected Opening Parantheses")
@@ -118,6 +149,10 @@ func parseParenNumList(l *gl.Lexer, ncount int) ([]float64, error) {
 				l.NextItem()
 			}
 		}
+		if l.PeekItem().Type == gl.ItemParan {
+			l.NextItem() // consume Parantheses
+			break
+		}
 		if l.PeekItem().Type != gl.ItemNumber {
 			return nil, fmt.Errorf("Expected Number got %v", l.PeekItem().String())
 		}
@@ -126,13 +161,7 @@ func parseParenNumList(l *gl.Lexer, ncount int) ([]float64, error) {
 			return nil, err
 		}
 		nums = append(nums, n)
-		if len(nums) >= ncount {
-			i = l.PeekItem()
-			if i.Type != gl.ItemParan {
-				return nil, fmt.Errorf("Expected Closing Parantheses")
-			}
-			l.NextItem() // consume Parantheses
-			return nums, nil
-		}
+
 	}
+	return nums, nil
 }
