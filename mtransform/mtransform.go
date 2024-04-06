@@ -1,90 +1,69 @@
 package mtransform
 
-import "math"
+import (
+	"zappem.net/pub/math/geom"
+)
 
-type Transform [3][3]float64
+// Transform is a co-opted 3D matrix for the purpose of performing 2D
+// transformations.
+type Transform geom.Matrix
 
-func (t *Transform) Apply(x float64, y float64) (float64, float64) {
-	var X, Y float64
-	X = t[0][0]*x + t[0][1]*y + t[0][2]
-	Y = t[1][0]*x + t[1][1]*y + t[1][2]
-	return X, Y
+// multiplyWith overwrites *a with (*a)x(*b)
+func (a *Transform) multiplyWith(b *Transform) {
+	*a = Transform(geom.Matrix(*a).XM(geom.Matrix(*b)))
 }
 
+// Translate returns a an (x,y) shift transform.
+func Translate(x float64, y float64) Transform {
+	return Transform(geom.M(
+		1, 0, x,
+		0, 1, y,
+		0, 0, 1))
+}
+
+// Identity is the identity transformation.
 func Identity() Transform {
-	var t Transform
-	t[0][0] = 1
-	t[1][1] = 1
-	t[2][2] = 1
-	return t
+	return Transform(geom.M(1))
 }
+
+// NewTransform returns a new transformation that is initialized as
+// the identity.
 func NewTransform() *Transform {
-	var t Transform
-	t = Identity()
+	t := Identity()
 	return &t
 }
 
+// Apply transforms an (x,y) coordinate pair into (X,Y) using the
+// transformation, t.
+func (t *Transform) Apply(x float64, y float64) (X float64, Y float64) {
+	v := geom.V(x, y, 1)
+	V := geom.Matrix(*t).XV(v)
+	X = V[0]
+	Y = V[1]
+	return
+}
+
+// MultiplyTransforms combines two transformations into a newly
+// allocated one.
 func MultiplyTransforms(a Transform, b Transform) Transform {
-	return Transform{
-		{
-			a[0][0]*b[0][0] + a[0][1]*b[1][0] + a[0][2]*b[2][0],
-			a[0][0]*b[0][1] + a[0][1]*b[1][1] + a[0][2]*b[2][1],
-			a[0][0]*b[0][2] + a[0][1]*b[1][2] + a[0][2]*b[2][2],
-		},
-		{
-			a[1][0]*b[0][0] + a[1][1]*b[1][0] + a[1][2]*b[2][0],
-			a[1][0]*b[0][1] + a[1][1]*b[1][1] + a[1][2]*b[2][1],
-			a[1][0]*b[0][2] + a[1][1]*b[1][2] + a[1][2]*b[2][2],
-		},
-		{
-			a[2][0]*b[0][0] + a[2][1]*b[1][0] + a[2][2]*b[2][0],
-			a[2][0]*b[0][1] + a[2][1]*b[1][1] + a[2][2]*b[2][1],
-			a[2][0]*b[0][2] + a[2][1]*b[1][2] + a[2][2]*b[2][2],
-		},
-	}
+	return Transform(geom.Matrix(a).XM(geom.Matrix(b)))
 }
 
-func (a *Transform) MultiplyWith(b Transform) {
-	*a = MultiplyTransforms(*a, b)
-}
-
+// Scale scales a transformation independently in x and y without
+// affecting its translation properties.
 func (t *Transform) Scale(x float64, y float64) {
-	a := Identity()
-	a[0][0] = x
-	a[1][1] = y
-	t.MultiplyWith(a)
-}
-func (t *Transform) Translate(x float64, y float64) {
-	a := Identity()
-
-	a[0][2] = x
-	a[1][2] = y
-	t.MultiplyWith(a)
+	a := geom.M(x, 0, 0,
+		0, y, 0,
+		0, 0, 1)
+	*t = Transform(geom.Matrix(*t).XM(a))
 }
 
-func (t *Transform) RotateOrigin(angle float64) {
-	a := Identity()
-	a[0][0] = math.Cos(angle)
-	a[0][1] = -math.Sin(angle)
-	a[1][0] = math.Sin(angle)
-	a[1][1] = a[0][0]
-	t.MultiplyWith(a)
-}
-
-func (t *Transform) RotatePoint(angle float64, x float64, y float64) {
-	t.Translate(x, y)
-	t.RotateOrigin(angle)
-	t.Translate(-x, -x)
-}
-
-func (t *Transform) SkewX(angle float64) {
-	a := Identity()
-	a[0][1] = math.Tan(angle)
-	t.MultiplyWith(a)
-}
-
-func (t *Transform) SkewY(angle float64) {
-	a := Identity()
-	a[1][0] = math.Tan(angle)
-	t.MultiplyWith(a)
+// RotatePoint extends the transformation to rotate by an angle around
+// a specific (x,y) point.
+func (t *Transform) RotatePoint(angle geom.Angle, x float64, y float64) {
+	shift := Translate(x, y)
+	unshift := Translate(-x, -y)
+	t.multiplyWith(&shift)
+	*t = Transform(geom.Matrix(*t).XM(geom.RZ(angle)))
+	t.multiplyWith(&unshift)
 }

@@ -6,6 +6,7 @@ import (
 
 	gl "zappem.net/pub/graphics/svg/genericlexer"
 	mt "zappem.net/pub/graphics/svg/mtransform"
+	"zappem.net/pub/math/geom"
 )
 
 func parseNumber(i gl.Item) (float64, error) {
@@ -82,17 +83,10 @@ func parseMatrix(l *gl.Lexer) (mt.Transform, error) {
 		return mt.Identity(),
 			fmt.Errorf("Error Parsing Transform Matrix: %v", err)
 	}
-	var tm mt.Transform
-	tm[0][0] = nums[0]
-	tm[0][1] = nums[2]
-	tm[0][2] = nums[4]
-	tm[1][0] = nums[1]
-	tm[1][1] = nums[3]
-	tm[1][2] = nums[5]
-	tm[2][0] = 0
-	tm[2][1] = 0
-	tm[2][2] = 1
-
+	tm := mt.Transform(geom.M(
+		nums[0], nums[2], nums[4],
+		nums[1], nums[3], nums[5],
+		0, 0, 1))
 	return tm, nil
 }
 
@@ -101,9 +95,7 @@ func parseTranslate(l *gl.Lexer) (mt.Transform, error) {
 	if err != nil || len(nums) != 2 {
 		return mt.Identity(), fmt.Errorf("Error Parsing Translate: %v", err)
 	}
-	tm := mt.Identity()
-	tm[0][2] = nums[0]
-	tm[1][2] = nums[1]
+	tm := mt.Translate(nums[0], nums[1])
 	return tm, nil
 }
 
@@ -118,7 +110,7 @@ func parseRotate(l *gl.Lexer) (mt.Transform, error) {
 	}
 
 	tm := mt.Identity()
-	(&tm).RotatePoint(a, px, py)
+	(&tm).RotatePoint(geom.Radians(a), px, py)
 	return tm, nil
 }
 
