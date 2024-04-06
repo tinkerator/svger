@@ -1,6 +1,8 @@
 package svg
 
-import mt "github.com/rustyoz/Mtransform"
+import (
+	"zappem.net/pub/graphics/svg/mtransform"
+)
 
 // Line is an SVG XML line element
 type Line struct {
@@ -12,6 +14,6 @@ type Line struct {
 	Y1        string `xml:"y1,attr"`
 	Y2        string `xml:"y2,attr"`
 
-	transform mt.Transform
+	transform mtransform.Transform
 	group     *Group
 }

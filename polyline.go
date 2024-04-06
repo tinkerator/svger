@@ -1,6 +1,8 @@
 package svg
 
-import mt "github.com/rustyoz/Mtransform"
+import (
+	mt "zappem.net/pub/graphics/svg/mtransform"
+)
 
 // PolyLine is a set of connected line segments that typically form a
 // closed shape

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	mt "github.com/rustyoz/Mtransform"
-	gl "github.com/rustyoz/genericlexer"
+	gl "zappem.net/pub/graphics/svg/genericlexer"
+	mt "zappem.net/pub/graphics/svg/mtransform"
 )
 
 // Path is an SVG XML path element

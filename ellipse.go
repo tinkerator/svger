@@ -1,6 +1,8 @@
 package svg
 
-import mt "github.com/rustyoz/Mtransform"
+import (
+	"zappem.net/pub/graphics/svg/mtransform"
+)
 
 // Ellipse is an SVG ellipse XML element
 type Ellipse struct {
@@ -12,6 +14,6 @@ type Ellipse struct {
 	Rx        string `xml:"rx,attr"`
 	Ry        string `xml:"ry,attr"`
 
-	transform mt.Transform
+	transform mtransform.Transform
 	group     *Group
 }

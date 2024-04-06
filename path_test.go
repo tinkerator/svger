@@ -2,8 +2,6 @@ package svg
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 type PathTest struct {
@@ -62,11 +60,13 @@ var tests = []PathTest{
 func TestParsePathList(t *testing.T) {
 	for _, test := range tests {
 		svg, err := ParseSvg(test.Svg, "test", 0)
-		require.NoError(t, err)
+		if err != nil {
+			t.Fatalf("ParseSvg failed for test: %v", err)
+		}
 
 		dis, errChan := svg.ParseDrawingInstructions()
 		for err := range errChan {
-			require.NoError(t, err)
+			t.Fatalf("ParseDrawingInstructions channel result failed: %v", err)
 		}
 
 		strux := []*DrawingInstruction{}

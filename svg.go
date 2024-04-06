@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	mt "github.com/rustyoz/Mtransform"
+	mt "zappem.net/pub/graphics/svg/mtransform"
 )
 
 // DrawingInstructionParser allow getting segments and drawing
@@ -27,8 +27,8 @@ type Tuple [2]float64
 type Svg struct {
 	Title        string  `xml:"title"`
 	Groups       []Group `xml:"g"`
-	Width 		 string  `xml:"width,attr"`
-	Height 		 string  `xml:"height,attr"`
+	Width        string  `xml:"width,attr"`
+	Height       string  `xml:"height,attr"`
 	ViewBox      string  `xml:"viewBox,attr"`
 	Elements     []DrawingInstructionParser
 	Name         string

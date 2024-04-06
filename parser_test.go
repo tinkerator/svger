@@ -3,8 +3,6 @@ package svg
 import (
 	"strings"
 	"testing"
-
-	"github.com/cheekybits/is"
 )
 
 const testSvg = `<?xml version="1.0" encoding="utf-8"?>
@@ -19,13 +17,15 @@ const testSvg = `<?xml version="1.0" encoding="utf-8"?>
 </svg>`
 
 func TestParse(t *testing.T) {
-	is := is.New(t)
+	if svg, err := ParseSvg(testSvg, "test", 0); err != nil {
+		t.Errorf("parsing failed: %v", err)
+	} else if svg == nil {
+		t.Error("ParseSvg returned nil without error")
+	}
 
-	svg, err := ParseSvg(testSvg, "test", 0)
-	is.NoErr(err)
-	is.NotNil(svg)
-
-	svg, err = ParseSvgFromReader(strings.NewReader(testSvg), "test", 0)
-	is.NoErr(err)
-	is.NotNil(svg)
+	if svg, err := ParseSvgFromReader(strings.NewReader(testSvg), "test", 0); err != nil {
+		t.Errorf("ParseSvgFromReader parsing failed: %v", err)
+	} else if svg == nil {
+		t.Error("ParseSvgFromReader returned nil without error")
+	}
 }

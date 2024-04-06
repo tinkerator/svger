@@ -1,6 +1,8 @@
 package svg
 
-import mt "github.com/rustyoz/Mtransform"
+import (
+	mt "zappem.net/pub/graphics/svg/mtransform"
+)
 
 // Rect is an SVG XML rect element
 type Rect struct {

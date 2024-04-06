@@ -1,6 +1,8 @@
 package svg
 
-import mt "github.com/rustyoz/Mtransform"
+import (
+	mt "zappem.net/pub/graphics/svg/mtransform"
+)
 
 // Polygon is a closed shape of straight line segments
 type Polygon struct {
