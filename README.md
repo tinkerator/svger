@@ -10,7 +10,7 @@ program.
 
 ## History
 
-This package was evolved from
+This package was evolved from a forked version of:
 [`github.com/rustyoz/svg`](https://github.com/rustyoz/svg), trimmed of
 superflous dependencies and merged with the two independent packages:
 [`github.com/rustyoz/Mtransform`](https://github.com/rustyoz/Mtransform)
