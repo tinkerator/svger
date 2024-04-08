@@ -1,4 +1,4 @@
-package genericLexer
+package genericlexer
 
 import (
 	"fmt"

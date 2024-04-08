@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"zappem.net/pub/graphics/svg"
+	"zappem.net/pub/graphics/svger"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 )
 
 // read an SVG or fail the program.
-func readSVG() *svg.Svg {
+func readSVG() *svger.Svg {
 	if *src == "" {
 		log.Fatal("please provide a --src=file.svg argument")
 	}
@@ -29,7 +29,7 @@ func readSVG() *svg.Svg {
 	}
 	defer f.Close()
 
-	s, err := svg.ParseSvgFromReader(f, *src, 1)
+	s, err := svger.ParseSvgFromReader(f, *src, 1)
 	if err != nil {
 		log.Fatalf("failed to parse %q: %v", *src, err)
 	}

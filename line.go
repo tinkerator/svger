@@ -1,7 +1,7 @@
-package svg
+package svger
 
 import (
-	"zappem.net/pub/graphics/svg/mtransform"
+	"zappem.net/pub/graphics/svger/mtransform"
 )
 
 // Line is an SVG XML line element

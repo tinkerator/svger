@@ -1,7 +1,7 @@
-package svg
+package svger
 
 import (
-	"zappem.net/pub/graphics/svg/mtransform"
+	"zappem.net/pub/graphics/svger/mtransform"
 )
 
 // Ellipse is an SVG ellipse XML element

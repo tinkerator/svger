@@ -1,11 +1,11 @@
-package svg
+package svger
 
 import (
 	"fmt"
 	"strconv"
 
-	gl "zappem.net/pub/graphics/svg/genericlexer"
-	mt "zappem.net/pub/graphics/svg/mtransform"
+	gl "zappem.net/pub/graphics/svger/genericlexer"
+	"zappem.net/pub/graphics/svger/mtransform"
 	"zappem.net/pub/math/geom"
 )
 
@@ -54,13 +54,13 @@ func parseTuple(l *gl.Lexer) (Tuple, error) {
 	return t, nil
 }
 
-func parseTransform(tstring string) (mt.Transform, error) {
+func parseTransform(tstring string) (mtransform.Transform, error) {
 	lexer, _ := gl.Lex("tlexer", tstring)
 	for {
 		i := lexer.NextItem()
 		switch i.Type {
 		case gl.ItemEOS:
-			return mt.Identity(),
+			return mtransform.Identity(),
 				fmt.Errorf("transform parse failed")
 		case gl.ItemWord:
 			switch i.Value {
@@ -77,53 +77,53 @@ func parseTransform(tstring string) (mt.Transform, error) {
 	}
 }
 
-func parseMatrix(l *gl.Lexer) (mt.Transform, error) {
+func parseMatrix(l *gl.Lexer) (mtransform.Transform, error) {
 	nums, err := parseParenNumList(l)
 	if err != nil || len(nums) != 6 {
-		return mt.Identity(),
+		return mtransform.Identity(),
 			fmt.Errorf("Error Parsing Transform Matrix: %v", err)
 	}
-	tm := mt.Transform(geom.M(
+	tm := mtransform.Transform(geom.M(
 		nums[0], nums[2], nums[4],
 		nums[1], nums[3], nums[5],
 		0, 0, 1))
 	return tm, nil
 }
 
-func parseTranslate(l *gl.Lexer) (mt.Transform, error) {
+func parseTranslate(l *gl.Lexer) (mtransform.Transform, error) {
 	nums, err := parseParenNumList(l)
 	if err != nil || len(nums) != 2 {
-		return mt.Identity(), fmt.Errorf("Error Parsing Translate: %v", err)
+		return mtransform.Identity(), fmt.Errorf("Error Parsing Translate: %v", err)
 	}
-	tm := mt.Translate(nums[0], nums[1])
+	tm := mtransform.Translate(nums[0], nums[1])
 	return tm, nil
 }
 
-func parseRotate(l *gl.Lexer) (mt.Transform, error) {
+func parseRotate(l *gl.Lexer) (mtransform.Transform, error) {
 	nums, err := parseParenNumList(l)
 	if err != nil || (len(nums) != 1 && len(nums) != 3) {
-		return mt.Identity(), fmt.Errorf("Error Parsing Rotate: %v", err)
+		return mtransform.Identity(), fmt.Errorf("Error Parsing Rotate: %v", err)
 	}
 	a, px, py := nums[0], 0.0, 0.0
 	if len(nums) == 3 {
 		px, py = nums[1], nums[2]
 	}
 
-	tm := mt.Identity()
+	tm := mtransform.Identity()
 	(&tm).RotatePoint(geom.Radians(a), px, py)
 	return tm, nil
 }
 
-func parseScale(l *gl.Lexer) (mt.Transform, error) {
+func parseScale(l *gl.Lexer) (mtransform.Transform, error) {
 	nums, err := parseParenNumList(l)
 	if err != nil || (len(nums) != 1 && len(nums) != 2) {
-		return mt.Identity(), fmt.Errorf("Error Parsing Scale: %v", err)
+		return mtransform.Identity(), fmt.Errorf("Error Parsing Scale: %v", err)
 	}
 	x, y := nums[0], nums[0]
 	if len(nums) == 2 {
 		y = nums[1]
 	}
-	tm := mt.Identity()
+	tm := mtransform.Identity()
 	(&tm).Scale(x, y)
 	return tm, nil
 }

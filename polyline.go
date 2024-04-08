@@ -1,7 +1,7 @@
-package svg
+package svger
 
 import (
-	mt "zappem.net/pub/graphics/svg/mtransform"
+	"zappem.net/pub/graphics/svger/mtransform"
 )
 
 // PolyLine is a set of connected line segments that typically form a
@@ -12,6 +12,6 @@ type PolyLine struct {
 	Style     string `xml:"style,attr"`
 	Points    string `xml:"points,attr"`
 
-	transform mt.Transform
+	transform mtransform.Transform
 	group     *Group
 }

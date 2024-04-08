@@ -1,9 +1,8 @@
-package svg
+package svger
 
 import "math"
 
 // cubicBezier
-//
 type cubicBezier struct {
 	controlpoints [4][2]float64
 	vertices      [][2]float64

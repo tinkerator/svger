@@ -1,7 +1,7 @@
-package svg
+package svger
 
 import (
-	mt "zappem.net/pub/graphics/svg/mtransform"
+	"zappem.net/pub/graphics/svger/mtransform"
 )
 
 // Polygon is a closed shape of straight line segments
@@ -11,6 +11,6 @@ type Polygon struct {
 	Style     string `xml:"style,attr"`
 	Points    string `xml:"points,attr"`
 
-	transform mt.Transform
+	transform mtransform.Transform
 	group     *Group
 }

@@ -1,7 +1,7 @@
-package svg
+package svger
 
 import (
-	mt "zappem.net/pub/graphics/svg/mtransform"
+	"zappem.net/pub/graphics/svger/mtransform"
 )
 
 // Rect is an SVG XML rect element
@@ -14,7 +14,7 @@ type Rect struct {
 	Rx        string `xml:"rx,attr"`
 	Ry        string `xml:"ry,attr"`
 
-	transform mt.Transform
+	transform mtransform.Transform
 	group     *Group
 }
 

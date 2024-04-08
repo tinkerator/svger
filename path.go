@@ -1,11 +1,11 @@
-package svg
+package svger
 
 import (
 	"fmt"
 	"strconv"
 
-	gl "zappem.net/pub/graphics/svg/genericlexer"
-	mt "zappem.net/pub/graphics/svg/mtransform"
+	gl "zappem.net/pub/graphics/svger/genericlexer"
+	mt "zappem.net/pub/graphics/svger/mtransform"
 )
 
 // Path is an SVG XML path element

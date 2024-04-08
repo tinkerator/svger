@@ -1,12 +1,14 @@
-# svg
+# svger
 
-Go library for parsing and modifying svg files. It includes support
-for Bezier Curve rasterization. Its main purpose is to transform
-multi-group SVG kicad generated SVG metal layers into a flattened
-outline represenation, suitable for laser cutting on a Snapmaker 2.
+Go package for parsing and modifying svg files. It includes support
+for Bezier Curve rasterization.
 
-This operation is performed by the included `example/svgoutline.go`
-program.
+The package's main purpose is to transform multi-group SVG kicad
+generated SVG metal layers into a flattened outline represenation,
+suitable for laser cutting on a Snapmaker 2.
+
+This operation will eventually be performed by the included
+`example/svgoutline.go` program. A work in progress, at present.
 
 ## History
 

@@ -1,4 +1,4 @@
-module zappem.net/pub/graphics/svg
+module zappem.net/pub/graphics/svger
 
 go 1.21
 

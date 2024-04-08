@@ -1,4 +1,4 @@
-package svg
+package svger
 
 // InstructionType tells our path drawing library which function it has
 // to call

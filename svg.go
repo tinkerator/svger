@@ -1,4 +1,4 @@
-package svg
+package svger
 
 import (
 	"encoding/xml"
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	mt "zappem.net/pub/graphics/svg/mtransform"
+	"zappem.net/pub/graphics/svger/mtransform"
 )
 
 // DrawingInstructionParser allow getting segments and drawing
@@ -32,7 +32,7 @@ type Svg struct {
 	ViewBox      string  `xml:"viewBox,attr"`
 	Elements     []DrawingInstructionParser
 	Name         string
-	Transform    *mt.Transform
+	Transform    *mtransform.Transform
 	scale        float64
 	instructions chan *DrawingInstruction
 	errors       chan error
@@ -48,7 +48,7 @@ type Group struct {
 	FillRule        string
 	Elements        []DrawingInstructionParser
 	TransformString string
-	Transform       *mt.Transform // row, column
+	Transform       *mtransform.Transform // row, column
 	Parent          *Group
 	Owner           *Svg
 	instructions    chan *DrawingInstruction
@@ -126,7 +126,7 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 
 			switch tok.Name.Local {
 			case "g":
-				elementStruct = &Group{Parent: g, Owner: g.Owner, Transform: mt.NewTransform()}
+				elementStruct = &Group{Parent: g, Owner: g.Owner, Transform: mtransform.NewTransform()}
 			case "rect":
 				elementStruct = &Rect{group: g}
 			case "circle":
@@ -220,7 +220,7 @@ func (s *Svg) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
 
 			switch tok.Name.Local {
 			case "g":
-				g := &Group{Owner: s, Transform: mt.NewTransform()}
+				g := &Group{Owner: s, Transform: mtransform.NewTransform()}
 				if err = decoder.DecodeElement(g, &tok); err != nil {
 					return fmt.Errorf("error decoding group element within SVG struct: %s", err)
 				}
@@ -255,7 +255,7 @@ func (s *Svg) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
 func ParseSvg(str string, name string, scale float64) (*Svg, error) {
 	var svg Svg
 	svg.Name = name
-	svg.Transform = mt.NewTransform()
+	svg.Transform = mtransform.NewTransform()
 	if scale > 0 {
 		svg.Transform.Scale(scale, scale)
 		svg.scale = scale
@@ -273,7 +273,7 @@ func ParseSvg(str string, name string, scale float64) (*Svg, error) {
 	for i := range svg.Groups {
 		svg.Groups[i].SetOwner(&svg)
 		if svg.Groups[i].Transform == nil {
-			svg.Groups[i].Transform = mt.NewTransform()
+			svg.Groups[i].Transform = mtransform.NewTransform()
 		}
 	}
 	return &svg, nil
@@ -283,7 +283,7 @@ func ParseSvg(str string, name string, scale float64) (*Svg, error) {
 func ParseSvgFromReader(r io.Reader, name string, scale float64) (*Svg, error) {
 	var svg Svg
 	svg.Name = name
-	svg.Transform = mt.NewTransform()
+	svg.Transform = mtransform.NewTransform()
 	if scale > 0 {
 		svg.Transform.Scale(scale, scale)
 		svg.scale = scale
@@ -300,7 +300,7 @@ func ParseSvgFromReader(r io.Reader, name string, scale float64) (*Svg, error) {
 	for i := range svg.Groups {
 		svg.Groups[i].SetOwner(&svg)
 		if svg.Groups[i].Transform == nil {
-			svg.Groups[i].Transform = mt.NewTransform()
+			svg.Groups[i].Transform = mtransform.NewTransform()
 		}
 	}
 	return &svg, nil
