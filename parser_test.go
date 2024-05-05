@@ -16,7 +16,7 @@ const testSvg = `<?xml version="1.0" encoding="utf-8"?>
 <g><text transform="matrix(1 0 0 1 232.3306 107.5952)" fill="#FFFFFF" font-family="'ArialMT'" font-size="31.9752">PODIUM</text></g>
 </svg>`
 
-func TestParse(t *testing.T) {
+func TestParseSvg(t *testing.T) {
 	if svg, err := ParseSvg(testSvg, "test", 0); err != nil {
 		t.Errorf("parsing failed: %v", err)
 	} else if svg == nil {

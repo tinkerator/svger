@@ -1,5 +1,7 @@
 package svger
 
+import "fmt"
+
 // InstructionType tells our path drawing library which function it has
 // to call
 type InstructionType int
@@ -7,12 +9,32 @@ type InstructionType int
 // These are instruction types that we use with our path drawing library
 const (
 	MoveInstruction InstructionType = iota
-	CircleInstruction
-	CurveInstruction
 	LineInstruction
 	CloseInstruction
 	PaintInstruction
+	CircleInstruction
+	CurveInstruction
 )
+
+// String describes the kind of instruction type.
+func (kind InstructionType) String() string {
+	switch kind {
+	case MoveInstruction:
+		return "Move"
+	case CircleInstruction:
+		return "Circle"
+	case CurveInstruction:
+		return "Curve"
+	case LineInstruction:
+		return "Line"
+	case CloseInstruction:
+		return "Close"
+	case PaintInstruction:
+		return "Paint"
+	default:
+		return fmt.Sprintf("unknown InstructionType[%d]", kind)
+	}
+}
 
 // CurvePoints are the points needed by a bezier curve.
 type CurvePoints struct {

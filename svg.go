@@ -5,12 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
 
 	"zappem.net/pub/graphics/svger/mtransform"
 )
+
+// Debug causes the package to log.Print*() debugging information.
+var Debug = false
 
 // DrawingInstructionParser allow getting segments and drawing
 // instructions from them. All SVG elements should implement this
@@ -25,18 +29,32 @@ type Tuple [2]float64
 // Svg represents an SVG file containing at least a top level group or a
 // number of Paths
 type Svg struct {
-	Title        string  `xml:"title"`
-	Groups       []Group `xml:"g"`
-	Width        string  `xml:"width,attr"`
-	Height       string  `xml:"height,attr"`
-	ViewBox      string  `xml:"viewBox,attr"`
-	Elements     []DrawingInstructionParser
-	Name         string
-	Transform    *mtransform.Transform
-	scale        float64
+	// Title is the title string for the SVG image
+	Title string `xml:"title"`
+	// Groups lists the top level groups
+	Groups []Group `xml:"g"`
+	// Width is the width of the SVG image
+	Width string `xml:"width,attr"`
+	// Height is the height of the SVG image
+	Height string `xml:"height,attr"`
+	// ViewBox holds the unparsed view box description
+	ViewBox string `xml:"viewBox,attr"`
+	// Elements lists all of the top level elements in this SVG image
+	Elements []DrawingInstructionParser
+	// Name names the SVG - typically the filename
+	Name string
+	// Transform holds the base frame information for the image
+	// groups and elements of the image are relative to this
+	// base frame.
+	Transform *mtransform.Transform
+	// scale holds the scaling factor applied to descendant
+	// coordinates.
+	scale float64
+	// instructions is a common channel for emitting the sequence
+	// of drawing instructions
 	instructions chan *DrawingInstruction
-	errors       chan error
-	segments     chan Segment
+	// errors is a common channel for emitting decoding errors
+	errors chan error
 }
 
 // Group represents an SVG group (usually located in a 'g' XML element)
@@ -53,7 +71,6 @@ type Group struct {
 	Owner           *Svg
 	instructions    chan *DrawingInstruction
 	errors          chan error
-	segments        chan Segment
 }
 
 // ParseDrawingInstructions implements the DrawingInstructionParser interface
@@ -111,6 +128,42 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 				fmt.Println(err)
 			}
 			g.Transform = &t
+		case "style":
+			// another way to get some of the above
+			suppressStroke := false
+			suppressFill := false
+			for a, val := range splitStyle(attr.Value) {
+				switch a {
+				case "fill":
+					g.Fill = val
+				case "stroke":
+					g.Stroke = val
+				case "stroke-width":
+					g.StrokeWidth = parseWidth(val)
+				case "fill-opacity":
+					if v := parseWidth(val); v == 0 {
+						suppressFill = true
+					}
+				case "stroke-opacity":
+					if v := parseWidth(val); v == 0 {
+						suppressStroke = true
+					}
+				default:
+					if Debug {
+						log.Printf("TODO ingest style attr %q = %q", a, val)
+					}
+				}
+			}
+			if suppressFill {
+				g.Fill = "none"
+			}
+			if suppressStroke {
+				g.Stroke = "none"
+			}
+		default:
+			if Debug {
+				log.Printf("TODO unable to parse %#v", attr)
+			}
 		}
 	}
 
@@ -126,18 +179,38 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 
 			switch tok.Name.Local {
 			case "g":
-				elementStruct = &Group{Parent: g, Owner: g.Owner, Transform: mtransform.NewTransform()}
+				sub := &Group{
+					Parent:      g,
+					Owner:       g.Owner,
+					StrokeWidth: g.StrokeWidth,
+					Stroke:      g.Stroke,
+					Fill:        g.Fill,
+				}
+				x := mtransform.MultiplyTransforms(*mtransform.NewTransform(), *g.Transform)
+				sub.Transform = &x
+				elementStruct = sub
 			case "rect":
-				elementStruct = &Rect{group: g}
+				rect := &Rect{group: g}
+				elementStruct = rect
 			case "circle":
-				elementStruct = &Circle{group: g}
+				circ := &Circle{group: g}
+				elementStruct = circ
 			case "path":
-				elementStruct = &Path{group: g, StrokeWidth: float64(g.StrokeWidth), Stroke: &g.Stroke, Fill: &g.Fill}
+				path := &Path{
+					group:       g,
+					StrokeWidth: g.StrokeWidth,
+					Stroke:      &g.Stroke,
+					Fill:        &g.Fill,
+				}
+				elementStruct = path
 			default:
+				if Debug {
+					log.Printf("TODO support for %q elements", tok.Name.Local)
+				}
 				continue
 			}
 			if err = decoder.DecodeElement(elementStruct, &tok); err != nil {
-				return fmt.Errorf("error decoding element of Group: %s", err)
+				return fmt.Errorf("error decoding element of Group: %v", err)
 			}
 			g.Elements = append(g.Elements, elementStruct)
 		case xml.EndElement:

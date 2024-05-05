@@ -1,14 +1,28 @@
 # svger
 
-Go package for parsing and modifying svg files. It includes support
-for Bezier Curve rasterization.
+Go package for parsing re-rendering svg files. It includes support for
+Bezier Curve rasterization. See history for where the initial version
+of the code originated.
+
+## Overview
+
+The `svger` package parses SVG files and generates a series of drawing
+instructions to re-render them.
+
+Example, using the not-yet-finished `svsoutline` program:
+
+```
+$ go run examples/svgoutline.go --src examples/test-board-F_Cu.svg
+```
+
+Automated documentation for the svger package can be found on
+[go.dev](https://pkg.go.dev/zappem.net/pub/graphics/svger).
+
+## Planned changes
 
 The package's main purpose is to transform multi-group SVG kicad
 generated SVG metal layers into a flattened outline represenation,
 suitable for laser cutting on a Snapmaker 2.
-
-This operation will eventually be performed by the included
-`example/svgoutline.go` program. A work in progress, at present.
 
 ## History
 
