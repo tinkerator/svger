@@ -12,9 +12,9 @@ func refString(s string) *string {
 	return &x
 }
 
-// parse a numerical width value. Since 0 is a legitimate width,
-// return -1 in case of error.
-func parseWidth(val string) float64 {
+// parseDecimal parses a numerical width value. Since 0 is a
+// legitimate width, return -1 in case of error.
+func parseDecimal(val string) float64 {
 	f, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return -1

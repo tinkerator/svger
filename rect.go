@@ -1,6 +1,8 @@
 package svger
 
 import (
+	"errors"
+
 	"zappem.net/pub/graphics/svger/mtransform"
 )
 
@@ -18,14 +20,20 @@ type Rect struct {
 	group     *Group
 }
 
+// ErrNoSupportForRect indicates <rect> is not supported yet.
+var ErrNoSupportForRect = errors.New("no support for <rect> yet")
+
 // ParseDrawingInstructions implements the DrawingInstructionParser
 // interface
-func (r *Rect) ParseDrawingInstructions() (chan *DrawingInstruction, chan error) {
+func (r *Rect) ParseDrawingInstructions() chan *DrawingInstruction {
 	draw := make(chan *DrawingInstruction)
-	errs := make(chan error)
+	go func() {
+		defer close(draw)
+		draw <- &DrawingInstruction{
+			Kind:  ErrorInstruction,
+			Error: ErrNoSupportForRect,
+		}
 
-	defer close(draw)
-	defer close(errs)
-
-	return draw, errs
+	}()
+	return draw
 }

@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	src   = flag.String("src", "/dev/stdin", "source SVG file")
-	dest  = flag.String("dest", "/dev/stdout", "destination SVG file")
-	debug = flag.Bool("debug", false, "extra debugging output")
+	src     = flag.String("src", "/dev/stdin", "source SVG file")
+	dest    = flag.String("dest", "/dev/stdout", "destination SVG file")
+	debug   = flag.Bool("debug", false, "extra debugging output")
+	scriber = flag.Float64("scriber", 0.1, "mm width of the thinnest line")
 )
 
 // read an SVG or fail the program.
@@ -37,19 +38,21 @@ func readSVG() *svger.Svg {
 	return s
 }
 
-// examinePath investigates the elements of a path.
-func examinePath(p *svger.Path) {
-	ins, errs := p.ParseDrawingInstructions()
+// decodeSVG unravels the content of the SVG into sequences of svger.DrawingInstructions.
+func decodeSVG(s *svger.Svg) (dis []*svger.DrawingInstruction, err error) {
+	ins := s.ParseDrawingInstructions()
 	for {
-		err := <-errs
-		if err != nil {
-			log.Fatalf("examinePath encountered an error: %v", err)
-		}
 		i, ok := <-ins
 		if !ok {
-			// End of path
+			// End of svg
 			return
 		}
+		dis = append(dis, i)
+		if i.Error != nil {
+			err = i.Error
+			return
+		}
+
 		log.Printf("  %v:", i.Kind)
 		if i.M != nil {
 			log.Printf("    PathPoint=%v", *i.M)
@@ -76,83 +79,6 @@ func examinePath(p *svger.Path) {
 			log.Printf("    StrokeLineJoin=%v", *i.StrokeLineJoin)
 		}
 	}
-}
-
-func examineCircle(c *svger.Circle) {
-	ins, errs := c.ParseDrawingInstructions()
-	for {
-		err := <-errs
-		if err != nil {
-			log.Fatalf("examineCircle encountered an error: %v", err)
-		}
-		i, ok := <-ins
-		if !ok {
-			// End of path
-			return
-		}
-		log.Printf("  %v:", i.Kind)
-		if i.M != nil {
-			log.Printf("    PathPoint=%v", *i.M)
-		}
-		if i.CurvePoints != nil {
-			log.Printf("    CurvePoints=%v", *i.CurvePoints)
-		}
-		if i.Radius != nil {
-			log.Printf("    Radius=%v", *i.Radius)
-		}
-		if i.StrokeWidth != nil {
-			log.Printf("    StrokeWidth=%v", *i.StrokeWidth)
-		}
-		if i.Fill != nil {
-			log.Printf("    Fill=%v", *i.Fill)
-		}
-		if i.Stroke != nil {
-			log.Printf("    Stroke=%v", *i.Stroke)
-		}
-		if i.StrokeLineCap != nil {
-			log.Printf("    StrokeLineCap=%v", *i.StrokeLineCap)
-		}
-		if i.StrokeLineJoin != nil {
-			log.Printf("    StrokeLineJoin=%v", *i.StrokeLineJoin)
-		}
-	}
-}
-
-// examineGroup investigates the members of a group.
-func examineGroup(g *svger.Group) {
-	for j, e := range g.Elements {
-		switch e.(type) {
-		case *svger.Path:
-			if *debug {
-				log.Printf("  path[%d]: %#v", j, e.(*svger.Path))
-			}
-			examinePath(e.(*svger.Path))
-		case *svger.Circle:
-			examineCircle(e.(*svger.Circle))
-		case *svger.Group:
-			// nested groups.
-			examineGroup(e.(*svger.Group))
-		default:
-			log.Printf("  element[%d]: %#v", j, e)
-		}
-	}
-}
-
-// parseSVG works through the parsed SVG data structures, group by
-// group.
-func parseSVG(s *svger.Svg) {
-	trimmedGroups := 0
-	for i, g := range s.Groups {
-		if len(g.Elements) == 0 {
-			trimmedGroups++
-			continue
-		}
-		if *debug {
-			log.Printf("group[%d]:", i)
-		}
-		examineGroup(&g)
-	}
-	log.Printf("program not written yet, but skipped %d empty groups", trimmedGroups)
 }
 
 func main() {
@@ -165,7 +91,16 @@ func main() {
 		log.Printf("SVG: %#v", s)
 	}
 
-	parseSVG(s)
+	dis, err := decodeSVG(s)
+	if err != nil {
+		log.Fatalf("failed to fully decode SVG: %v", err)
+	}
+
+	if *debug {
+		for i, di := range dis {
+			log.Printf("%4d: %#v", i, *di)
+		}
+	}
 
 	if *dest == "" {
 		log.Fatal("please provide a --dest=output.svg argument")

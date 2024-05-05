@@ -23,7 +23,6 @@ type Path struct {
 	StrokeLineJoin  *string `xml:"stroke-linejoin,attr"`
 	Segments        chan Segment
 	instructions    chan *DrawingInstruction
-	errors          chan error
 	group           *Group
 }
 
@@ -69,7 +68,7 @@ func newPathDParse() *pathDescriptionParser {
 // ParseDrawingInstructions returns two channels of:
 // DrawingInstructions and errors. The former can be used to pass to a
 // path drawing library.
-func (p *Path) ParseDrawingInstructions() (chan *DrawingInstruction, chan error) {
+func (p *Path) ParseDrawingInstructions() chan *DrawingInstruction {
 	p.parseStyle()
 	pdp := newPathDParse()
 	pdp.p = p
@@ -77,6 +76,13 @@ func (p *Path) ParseDrawingInstructions() (chan *DrawingInstruction, chan error)
 		p.group = new(Group)
 		temp := mt.Identity()
 		p.group.Transform = &temp
+	} else {
+		if lc := p.group.StrokeLineCap; lc != "" && p.StrokeLineCap == nil {
+			p.StrokeLineCap = &lc
+		}
+		if lj := p.group.StrokeLineJoin; lj != "" && p.StrokeLineJoin == nil {
+			p.StrokeLineJoin = &lj
+		}
 	}
 	pdp.svg = p.group.Owner
 	pathTransform := mt.Identity()
@@ -89,13 +95,11 @@ func (p *Path) ParseDrawingInstructions() (chan *DrawingInstruction, chan error)
 	pdp.transform = mt.MultiplyTransforms(pdp.transform, pathTransform)
 
 	p.instructions = make(chan *DrawingInstruction, 100)
-	p.errors = make(chan error, 100)
 	l, _ := gl.Lex(fmt.Sprint(p.ID), p.D)
 
 	pdp.lex = l
 	go func() {
 		defer close(p.instructions)
-		defer close(p.errors)
 		var count int
 		for {
 			i := pdp.lex.NextItem()
@@ -115,9 +119,11 @@ func (p *Path) ParseDrawingInstructions() (chan *DrawingInstruction, chan error)
 				}
 				return
 			case i.Type == gl.ItemLetter:
-				err := pdp.parseCommandDrawingInstructions(l, i)
-				if err != nil {
-					p.errors <- fmt.Errorf("error when parsing instruction number %d: %s", count, err)
+				if err := pdp.parseCommandDrawingInstructions(l, i); err != nil {
+					pdp.p.instructions <- &DrawingInstruction{
+						Kind:  ErrorInstruction,
+						Error: fmt.Errorf("error when parsing instruction number %d: %s", count, err),
+					}
 					return
 				}
 			default:
@@ -126,7 +132,7 @@ func (p *Path) ParseDrawingInstructions() (chan *DrawingInstruction, chan error)
 		}
 	}()
 
-	return p.instructions, p.errors
+	return p.instructions
 }
 
 // parseCommandDrawingInstructions keys off a command letter and
@@ -417,18 +423,38 @@ func (pdp *pathDescriptionParser) parseCurveToAbsDI() error {
 // path properties.
 func (p *Path) parseStyle() {
 	p.properties = splitStyle(p.Style)
+	suppressStroke := false
+	suppressFill := false
 	for key, val := range p.properties {
 		switch key {
-		case "stroke-width":
-			p.StrokeWidth = parseWidth(val)
 		case "fill":
 			p.Fill = refString(val)
+		case "fill-opacity":
+			if v := parseDecimal(val); v == 0 {
+				suppressFill = true
+			}
 		case "stroke":
 			p.Stroke = refString(val)
+		case "stroke-linecap":
+			p.StrokeLineCap = refString(val)
+		case "stroke-linejoin":
+			p.StrokeLineJoin = refString(val)
+		case "stroke-opacity":
+			if v := parseDecimal(val); v == 0 {
+				suppressStroke = true
+			}
+		case "stroke-width":
+			p.StrokeWidth = parseDecimal(val)
 		default:
 			if Debug {
 				log.Printf("TODO parse %q property %q", key, val)
 			}
 		}
+	}
+	if suppressFill {
+		p.Fill = refString("none")
+	}
+	if suppressStroke {
+		p.Stroke = refString("none")
 	}
 }

@@ -22,7 +22,7 @@ type Circle struct {
 
 // ParseDrawingInstructions implements the DrawingInstructionParser
 // interface
-func (c *Circle) ParseDrawingInstructions() (chan *DrawingInstruction, chan error) {
+func (c *Circle) ParseDrawingInstructions() chan *DrawingInstruction {
 	if c.Fill == "" && c.group.Fill != "" {
 		c.Fill = c.group.Fill
 	}
@@ -44,24 +44,18 @@ func (c *Circle) ParseDrawingInstructions() (chan *DrawingInstruction, chan erro
 	pdp.transform = mt.MultiplyTransforms(pdp.transform, circTransform)
 
 	draw := make(chan *DrawingInstruction)
-	errs := make(chan error)
-
 	go func() {
 		defer close(draw)
-		defer close(errs)
 
 		x, y := pdp.transform.Apply(c.Cx, c.Cy)
 		r := scale * c.Radius
 		s := scale * c.group.StrokeWidth
 
-		errs <- nil
 		draw <- &DrawingInstruction{
 			Kind:   CircleInstruction,
 			M:      &Tuple{x, y},
 			Radius: &r,
 		}
-
-		errs <- nil
 		draw <- &DrawingInstruction{
 			Kind:        PaintInstruction,
 			StrokeWidth: &s,
@@ -70,5 +64,5 @@ func (c *Circle) ParseDrawingInstructions() (chan *DrawingInstruction, chan erro
 		}
 	}()
 
-	return draw, errs
+	return draw
 }

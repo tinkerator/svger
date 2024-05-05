@@ -8,20 +8,12 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
 
 	"zappem.net/pub/graphics/svger/mtransform"
 )
 
 // Debug causes the package to log.Print*() debugging information.
 var Debug = false
-
-// DrawingInstructionParser allow getting segments and drawing
-// instructions from them. All SVG elements should implement this
-// interface.
-type DrawingInstructionParser interface {
-	ParseDrawingInstructions() (chan *DrawingInstruction, chan error)
-}
 
 // Tuple is an X,Y coordinate
 type Tuple [2]float64
@@ -61,6 +53,8 @@ type Svg struct {
 type Group struct {
 	ID              string
 	Stroke          string
+	StrokeLineCap   string
+	StrokeLineJoin  string
 	StrokeWidth     float64
 	Fill            string
 	FillRule        string
@@ -76,31 +70,21 @@ type Group struct {
 // ParseDrawingInstructions implements the DrawingInstructionParser interface
 //
 // This method makes it easier to get all the drawing instructions.
-func (g *Group) ParseDrawingInstructions() (chan *DrawingInstruction, chan error) {
+func (g *Group) ParseDrawingInstructions() chan *DrawingInstruction {
 	g.instructions = make(chan *DrawingInstruction, 100)
-	g.errors = make(chan error, 100)
-
-	errWg := &sync.WaitGroup{}
-
 	go func() {
 		defer close(g.instructions)
-		defer func() { errWg.Wait(); close(g.errors) }()
 		for _, e := range g.Elements {
-			instrs, errs := e.ParseDrawingInstructions()
-			errWg.Add(1)
-			go func() {
-				for er := range errs {
-					g.errors <- er
-				}
-				errWg.Done()
-			}()
+			instrs := e.ParseDrawingInstructions()
 			for is := range instrs {
 				g.instructions <- is
+				if is.Error != nil {
+					return
+				}
 			}
 		}
 	}()
-
-	return g.instructions, g.errors
+	return g.instructions
 }
 
 // UnmarshalXML implements the encoding.xml.Unmarshaler interface
@@ -136,18 +120,22 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 				switch a {
 				case "fill":
 					g.Fill = val
-				case "stroke":
-					g.Stroke = val
-				case "stroke-width":
-					g.StrokeWidth = parseWidth(val)
 				case "fill-opacity":
-					if v := parseWidth(val); v == 0 {
+					if v := parseDecimal(val); v == 0 {
 						suppressFill = true
 					}
+				case "stroke":
+					g.Stroke = val
+				case "stroke-linecap":
+					g.StrokeLineCap = val
+				case "stroke-linejoin":
+					g.StrokeLineJoin = val
 				case "stroke-opacity":
-					if v := parseWidth(val); v == 0 {
+					if v := parseDecimal(val); v == 0 {
 						suppressStroke = true
 					}
+				case "stroke-width":
+					g.StrokeWidth = parseDecimal(val)
 				default:
 					if Debug {
 						log.Printf("TODO ingest style attr %q = %q", a, val)
@@ -224,47 +212,32 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 // ParseDrawingInstructions implements the DrawingInstructionParser interface
 //
 // This method makes it easier to get all the drawing instructions.
-func (s *Svg) ParseDrawingInstructions() (chan *DrawingInstruction, chan error) {
+func (s *Svg) ParseDrawingInstructions() chan *DrawingInstruction {
 	s.instructions = make(chan *DrawingInstruction, 100)
-	s.errors = make(chan error, 100)
-
 	go func() {
-		errWg := &sync.WaitGroup{}
 		var elecount int
 		defer close(s.instructions)
-		defer func() { errWg.Wait(); close(s.errors) }()
 		for _, e := range s.Elements {
 			elecount++
-			instrs, errs := e.ParseDrawingInstructions()
-			errWg.Add(1)
-			go func(count int) {
-				for er := range errs {
-					s.errors <- fmt.Errorf("error when parsing element nr. %d: %s", count, er)
-				}
-				errWg.Done()
-			}(elecount)
-
+			instrs := e.ParseDrawingInstructions()
 			for is := range instrs {
 				s.instructions <- is
+				if is.Error != nil {
+					return
+				}
 			}
 		}
-
 		for _, g := range s.Groups {
-			instrs, errs := g.ParseDrawingInstructions()
-			errWg.Add(1)
-			go func() {
-				for er := range errs {
-					s.errors <- er
-				}
-				errWg.Done()
-			}()
+			instrs := g.ParseDrawingInstructions()
 			for is := range instrs {
 				s.instructions <- is
+				if is.Error != nil {
+					return
+				}
 			}
 		}
 	}()
-
-	return s.instructions, s.errors
+	return s.instructions
 }
 
 // UnmarshalXML implements the encoding.xml.Unmarshaler interface

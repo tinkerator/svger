@@ -8,33 +8,14 @@ type InstructionType int
 
 // These are instruction types that we use with our path drawing library
 const (
-	MoveInstruction InstructionType = iota
+	ErrorInstruction InstructionType = iota
+	MoveInstruction
 	LineInstruction
 	CloseInstruction
 	PaintInstruction
 	CircleInstruction
 	CurveInstruction
 )
-
-// String describes the kind of instruction type.
-func (kind InstructionType) String() string {
-	switch kind {
-	case MoveInstruction:
-		return "Move"
-	case CircleInstruction:
-		return "Circle"
-	case CurveInstruction:
-		return "Curve"
-	case LineInstruction:
-		return "Line"
-	case CloseInstruction:
-		return "Close"
-	case PaintInstruction:
-		return "Paint"
-	default:
-		return fmt.Sprintf("unknown InstructionType[%d]", kind)
-	}
-}
 
 // CurvePoints are the points needed by a bezier curve.
 type CurvePoints struct {
@@ -50,6 +31,7 @@ type CurvePoints struct {
 // indicated byt the InstructionType) will be non-nil.
 type DrawingInstruction struct {
 	Kind           InstructionType
+	Error          error
 	M              *Tuple
 	CurvePoints    *CurvePoints
 	Radius         *float64
@@ -58,4 +40,33 @@ type DrawingInstruction struct {
 	Stroke         *string
 	StrokeLineCap  *string
 	StrokeLineJoin *string
+}
+
+// DrawingInstructionParser allow getting segments and drawing
+// instructions from them. All SVG elements should implement this
+// interface.
+type DrawingInstructionParser interface {
+	ParseDrawingInstructions() chan *DrawingInstruction
+}
+
+// String describes the kind of instruction type.
+func (kind InstructionType) String() string {
+	switch kind {
+	case ErrorInstruction:
+		return "Error"
+	case MoveInstruction:
+		return "Move"
+	case CircleInstruction:
+		return "Circle"
+	case CurveInstruction:
+		return "Curve"
+	case LineInstruction:
+		return "Line"
+	case CloseInstruction:
+		return "Close"
+	case PaintInstruction:
+		return "Paint"
+	default:
+		return fmt.Sprintf("unknown InstructionType[%d]", kind)
+	}
 }
