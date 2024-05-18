@@ -64,11 +64,7 @@ func TestParsePathList(t *testing.T) {
 			t.Fatalf("ParseSvg failed for test: %v", err)
 		}
 
-		dis, errChan := svg.ParseDrawingInstructions()
-		for err := range errChan {
-			t.Fatalf("ParseDrawingInstructions channel result failed: %v", err)
-		}
-
+		dis := svg.ParseDrawingInstructions()
 		strux := []*DrawingInstruction{}
 		for di := range dis {
 			strux = append(strux, di)
