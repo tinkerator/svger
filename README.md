@@ -7,9 +7,9 @@ of the code originated.
 ## Overview
 
 The `svger` package parses SVG files and generates a series of drawing
-instructions to re-render them.
+instructions in order to re-render/manipulate them.
 
-Example, using the not-yet-finished `svgoutline` program:
+We provide a simple example, the `svgoutline` program:
 
 ```
 $ go run examples/svgoutline.go --src examples/test-board-F_Cu.svg

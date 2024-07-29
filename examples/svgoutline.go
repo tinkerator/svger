@@ -1,7 +1,5 @@
-// Program svgoutline transforms an SVG collection of lines into a
-// flattened outline SVG. This program is intended primarily to
-// facilitate turning Kicad generated SVG metal masks into a laser
-// cut-able outline on a PCB.
+// Program svgoutline imports an SVG and dumps its content as a text
+// log.
 package main
 
 import (
@@ -13,10 +11,8 @@ import (
 )
 
 var (
-	src     = flag.String("src", "/dev/stdin", "source SVG file")
-	dest    = flag.String("dest", "/dev/stdout", "destination SVG file")
-	debug   = flag.Bool("debug", false, "extra debugging output")
-	scriber = flag.Float64("scriber", 0.1, "mm width of the thinnest line")
+	src   = flag.String("src", "/dev/stdin", "source SVG file")
+	debug = flag.Bool("debug", false, "extra debugging output")
 )
 
 // read an SVG or fail the program.
@@ -38,7 +34,8 @@ func readSVG() *svger.Svg {
 	return s
 }
 
-// decodeSVG unravels the content of the SVG into sequences of svger.DrawingInstructions.
+// decodeSVG unravels the content of the SVG into sequences of
+// svger.DrawingInstructions.
 func decodeSVG(s *svger.Svg) (dis []*svger.DrawingInstruction, err error) {
 	ins := s.ParseDrawingInstructions()
 	for {
@@ -86,7 +83,6 @@ func main() {
 	svger.Debug = *debug
 
 	s := readSVG()
-
 	if *debug {
 		log.Printf("SVG: %#v", s)
 	}
@@ -95,14 +91,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to fully decode SVG: %v", err)
 	}
-
-	if *debug {
-		for i, di := range dis {
-			log.Printf("%4d: %#v", i, *di)
-		}
-	}
-
-	if *dest == "" {
-		log.Fatal("please provide a --dest=output.svg argument")
+	if dis == nil {
+		log.Fatal("nothing decoded")
 	}
 }
