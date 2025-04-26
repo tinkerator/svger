@@ -168,11 +168,13 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 			switch tok.Name.Local {
 			case "g":
 				sub := &Group{
-					Parent:      g,
-					Owner:       g.Owner,
-					StrokeWidth: g.StrokeWidth,
-					Stroke:      g.Stroke,
-					Fill:        g.Fill,
+					Parent:         g,
+					Owner:          g.Owner,
+					StrokeLineCap:  g.StrokeLineCap,
+					StrokeLineJoin: g.StrokeLineJoin,
+					StrokeWidth:    g.StrokeWidth,
+					Stroke:         g.Stroke,
+					Fill:           g.Fill,
 				}
 				x := mtransform.MultiplyTransforms(*mtransform.NewTransform(), *g.Transform)
 				sub.Transform = &x
@@ -185,10 +187,12 @@ func (g *Group) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error
 				elementStruct = circ
 			case "path":
 				path := &Path{
-					group:       g,
-					StrokeWidth: g.StrokeWidth,
-					Stroke:      &g.Stroke,
-					Fill:        &g.Fill,
+					group:          g,
+					StrokeWidth:    g.StrokeWidth,
+					StrokeLineCap:  &g.StrokeLineCap,
+					StrokeLineJoin: &g.StrokeLineJoin,
+					Stroke:         &g.Stroke,
+					Fill:           &g.Fill,
 				}
 				elementStruct = path
 			default:
